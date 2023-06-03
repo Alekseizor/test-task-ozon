@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+
+option go_package = "./;handlers";
+
+package main;
+
+service ConverterService {
+  rpc GetLink(RequestGetLink) returns (ResponseGetLink) {};
+  rpc Generation(RequestGeneration) returns (ResponseGeneration) {};
+}
+
+message RequestGetLink {
+  string shorten_url = 1;
+}
+
+message ResponseGetLink {
+  string initial_url = 1;
+}
+
+message RequestGeneration {
+  string initial_url = 1;
+}
+
+message ResponseGeneration {
+  string shorten_url = 1;
+}
