@@ -11,13 +11,13 @@ import (
 	"log"
 	"net/http"
 	"test-task-ozon/internal/pkg/repository/links"
-	"test-task-ozon/internal/pkg/sending_json"
+	"test-task-ozon/internal/pkg/sendingjson"
 )
 
 type LinksHandler struct {
 	LinkRepo links.LinkRepo
 	Logger   *zap.SugaredLogger
-	Send     sending_json.ServiceSend
+	Send     sendingjson.ServiceSend
 }
 
 func (h *LinksHandler) GetLink(w http.ResponseWriter, r *http.Request) {

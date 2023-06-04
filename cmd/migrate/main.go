@@ -13,7 +13,7 @@ const (
 	dbName         = "generation"
 	dbUser         = "root"
 	dbPass         = "ozon"
-	dbHost         = "localhost"
+	dbHost         = "db"
 	dbPort         = "5432"
 	migrationsPath = "migrations"
 	driver         = "postgres"

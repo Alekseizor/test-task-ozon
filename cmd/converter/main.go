@@ -9,9 +9,10 @@ import (
 	"go.uber.org/zap"
 	"log"
 	"net/http"
+	"os"
 	"test-task-ozon/internal/pkg/handlers"
 	"test-task-ozon/internal/pkg/repository/links"
-	"test-task-ozon/internal/pkg/sending_json"
+	"test-task-ozon/internal/pkg/sendingjson"
 )
 
 const (
@@ -19,7 +20,7 @@ const (
 	dbName = "generation"
 	dbUser = "root"
 	dbPass = "ozon"
-	dbHost = "localhost"
+	dbHost = "db"
 	dbPort = "5432"
 	driver = "postgres"
 )
@@ -45,16 +46,31 @@ func main() {
 	}
 	defer zapLogger.Sync()
 	logger := zapLogger.Sugar()
-
-	//repoLinkInMemory, err := links.NewRepoLinkInMemory()
-	repoLinkPostgres, err := links.NewRepoLinkPostgres(db, ctx)
-	serviceSend := sending_json.NewServiceSend(logger)
+	serviceSend := sendingjson.NewServiceSend(logger)
 	linkHandler := &handlers.LinksHandler{
-		LinkRepo: repoLinkPostgres,
-		Logger:   logger,
-		Send:     serviceSend,
+		Logger: logger,
+		Send:   serviceSend,
 	}
-	go handlers.StartConverterServer(repoLinkPostgres)
+
+	value := os.Getenv("METHOD")
+	log.Println(value)
+	if value == "in-memory" {
+		log.Println("мы в in-memory")
+		repoLinkInMemory, err := links.NewRepoLinkInMemory()
+		if err != nil {
+			logger.Errorf("failed to create NewRepoLinkInMemory - %s", err.Error())
+		}
+		linkHandler.LinkRepo = repoLinkInMemory
+		go handlers.StartConverterServer(repoLinkInMemory)
+	} else {
+		repoLinkPostgres, err := links.NewRepoLinkPostgres(db, ctx)
+		if err != nil {
+			logger.Errorf("failed to create NewRepoLinkPostgres - %s", err.Error())
+		}
+		linkHandler.LinkRepo = repoLinkPostgres
+		go handlers.StartConverterServer(repoLinkPostgres)
+	}
+
 	r := mux.NewRouter()
 
 	r.HandleFunc("/{URL}", linkHandler.GetLink).Methods("GET")

@@ -9,7 +9,7 @@ import (
 	"log"
 	"net"
 	"test-task-ozon/internal/pkg/repository/links"
-	"test-task-ozon/internal/pkg/url_generation"
+	"test-task-ozon/internal/pkg/urlgeneration"
 )
 
 type ConverterServer struct {
@@ -40,7 +40,7 @@ func (c ConverterServer) Generation(_ context.Context, requestGeneration *Reques
 	if existingURL != nil {
 		link.ShortenURL = existingURL.ShortenURL
 	} else {
-		link.ShortenURL = url_generation.GenerationURL()
+		link.ShortenURL = urlgeneration.GenerationURL()
 		err = c.LinkRepo.AddLink(link)
 		if err != nil {
 			return nil, err
