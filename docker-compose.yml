@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  test-task-ozon:
+    build: ./
+    command: bash -c "./wait-for-postgres.sh db && ./test-task-ozon-migrate && ./test-task-ozon"
+    ports:
+      - 8080:8080
+    environment:
+      - METHOD=${METHOD}
+    depends_on:
+      - db
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432 # Открываем порт для доступа к БД с хост-машины
+    environment:
+      POSTGRES_USER: root # Имя пользователя для подключения к БД
+      POSTGRES_PASSWORD: ozon # Пароль пользователя
+      POSTGRES_DB: generation # Название базы данных, которую нужно создать
+    volumes: # часть настроек для хранения данных, пока для нас это не важно
+      - type: volume
+        source: postgresdb-data
+        target: /var/lib/postgresql/data
+volumes: # часть настроек для хранения данных
+  postgresdb-data:
+    driver: local

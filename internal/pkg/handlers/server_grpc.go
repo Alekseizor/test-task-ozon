@@ -9,7 +9,7 @@ import (
 	"log"
 	"net"
 	"test-task-ozon/internal/pkg/repository/links"
-	"test-task-ozon/internal/pkg/url_generation"
+	"test-task-ozon/internal/pkg/urlgeneration"
 )
 
 type ConverterServer struct {
@@ -40,7 +40,7 @@ func (c ConverterServer) Generation(_ context.Context, requestGeneration *Reques
 	if existingURL != nil {
 		link.ShortenURL = existingURL.ShortenURL
 	} else {
-		link.ShortenURL = url_generation.GenerationURL()
+		link.ShortenURL = urlgeneration.GenerationURL()
 		err = c.LinkRepo.AddLink(link)
 		if err != nil {
 			return nil, err
@@ -55,7 +55,7 @@ func (c ConverterServer) Generation(_ context.Context, requestGeneration *Reques
 func StartConverterServer(linkRepo links.LinkRepo) {
 	lis, err := net.Listen("tcp", "localhost:9879")
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Printf("failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
 	RegisterConverterServiceServer(grpcServer, &ConverterServer{

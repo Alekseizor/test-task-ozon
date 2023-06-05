@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE link
+CREATE TABLE IF NOT EXISTS link
 (
     initial_url text NOT NULL,
     shorten_url text NOT NULL

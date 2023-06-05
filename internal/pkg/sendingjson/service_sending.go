@@ -1,4 +1,4 @@
-package sending_json
+package sendingjson
 
 import (
 	"net/http"

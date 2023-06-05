@@ -1,4 +1,4 @@
-package url_generation
+package urlgeneration
 
 import "math/rand"
 
