@@ -573,9 +573,11 @@ var ConverterService_ServiceDesc = grpc.ServiceDesc{
 import (
         "context"
         "encoding/json"
+        "net/http"
+
         "google.golang.org/grpc"
         "google.golang.org/grpc/credentials/insecure"
-        "net/http"
+
         "test-task-ozon/internal/pkg/repository/links"
 )
 
@@ -623,13 +625,15 @@ func (h *LinksHandler) Generation(w http.ResponseWriter, r *http.Request) <span 
 
 import (
         "context"
+        "net/http"
+
         "github.com/gorilla/mux"
         "go.uber.org/zap"
         "google.golang.org/grpc"
         "google.golang.org/grpc/codes"
         "google.golang.org/grpc/credentials/insecure"
         "google.golang.org/grpc/status"
-        "net/http"
+
         "test-task-ozon/internal/pkg/repository/links"
         "test-task-ozon/internal/pkg/sendingjson"
 )
@@ -679,11 +683,13 @@ func (h *LinksHandler) GetLink(w http.ResponseWriter, r *http.Request) <span cla
 import (
         "context"
         "database/sql"
+        "log"
+        "net"
+
         "google.golang.org/grpc"
         "google.golang.org/grpc/codes"
         "google.golang.org/grpc/status"
-        "log"
-        "net"
+
         "test-task-ozon/internal/pkg/repository/links"
         "test-task-ozon/internal/pkg/urlgeneration"
 )
