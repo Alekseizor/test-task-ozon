@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/gorilla/mux"
-	_ "github.com/lib/pq"
-	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
+	"go.uber.org/zap"
+
 	"test-task-ozon/internal/pkg/handlers"
 	"test-task-ozon/internal/pkg/repository/links"
 	"test-task-ozon/internal/pkg/sendingjson"

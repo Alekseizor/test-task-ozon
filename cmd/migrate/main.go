@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose"
 	jww "github.com/spf13/jwalterweatherman"

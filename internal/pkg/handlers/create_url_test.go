@@ -4,15 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/DATA-DOG/go-sqlmock"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/test/bufconn"
 	"log"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"test-task-ozon/internal/pkg/repository/links"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
+
+	"test-task-ozon/internal/pkg/repository/links"
 )
 
 const (
