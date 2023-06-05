@@ -25,8 +25,8 @@ const (
 )
 
 var (
-	ctx       = context.Background()
-	testError = fmt.Errorf("test Error")
+	ctx     = context.Background()
+	errTest = fmt.Errorf("test Error")
 )
 
 func TestNewRepoLinkPostgres(t *testing.T) {
@@ -61,7 +61,7 @@ func TestAddLink(t *testing.T) {
 	}
 	result := sqlmock.NewResult(1, 1) // вставляем одну запись, затронуто одна строка
 	mock.ExpectExec("INSERT INTO link VALUES").WillReturnResult(result)
-	mock.ExpectExec("INSERT INTO link VALUES").WillReturnError(testError)
+	mock.ExpectExec("INSERT INTO link VALUES").WillReturnError(errTest)
 
 	err = repo.AddLink(link)
 	if err != nil {
@@ -69,8 +69,8 @@ func TestAddLink(t *testing.T) {
 	}
 
 	err = repo.AddLink(link)
-	if err != testError {
-		t.Errorf("[1] the error is different from the expected one %v", testError)
+	if err != errTest {
+		t.Errorf("[1] the error is different from the expected one %v", errTest)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -91,7 +91,7 @@ func TestGetInitialLink(t *testing.T) {
 	}
 	result := []string{"initial_url", "shorten_url"}
 	mock.ExpectQuery("SELECT initial_url,shorten_url FROM link WHERE shorten_url=").WillReturnRows(sqlmock.NewRows(result).AddRow(initialURL, shortenURL))
-	mock.ExpectQuery("SELECT initial_url,shorten_url FROM link WHERE shorten_url=").WillReturnError(testError)
+	mock.ExpectQuery("SELECT initial_url,shorten_url FROM link WHERE shorten_url=").WillReturnError(errTest)
 	cases := []TestRepoLink{
 		{
 			url: shortenURL,
@@ -107,7 +107,7 @@ func TestGetInitialLink(t *testing.T) {
 			url: shortenURL,
 			response: TestRepoLinkResponse{
 				link: nil,
-				err:  testError,
+				err:  errTest,
 			},
 		},
 	}
@@ -152,7 +152,7 @@ func TestGetShortenLink(t *testing.T) {
 	}
 	result := []string{"initial_url", "shorten_url"}
 	mock.ExpectQuery("SELECT initial_url,shorten_url FROM link WHERE initial_url=").WillReturnRows(sqlmock.NewRows(result).AddRow(initialURL, shortenURL))
-	mock.ExpectQuery("SELECT initial_url,shorten_url FROM link WHERE initial_url=").WillReturnError(testError)
+	mock.ExpectQuery("SELECT initial_url,shorten_url FROM link WHERE initial_url=").WillReturnError(errTest)
 	mock.ExpectQuery("SELECT initial_url,shorten_url FROM link WHERE initial_url=").WillReturnError(sql.ErrNoRows)
 	cases := []TestRepoLink{
 		{
@@ -169,7 +169,7 @@ func TestGetShortenLink(t *testing.T) {
 			url: initialURL,
 			response: TestRepoLinkResponse{
 				link: nil,
-				err:  testError,
+				err:  errTest,
 			},
 		},
 		{

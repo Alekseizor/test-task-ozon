@@ -53,9 +53,7 @@ func main() {
 	}
 
 	value := os.Getenv("METHOD")
-	log.Println(value)
 	if value == "in-memory" {
-		log.Println("мы в in-memory")
 		repoLinkInMemory, err := links.NewRepoLinkInMemory()
 		if err != nil {
 			logger.Errorf("failed to create NewRepoLinkInMemory - %s", err.Error())

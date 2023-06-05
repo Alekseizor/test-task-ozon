@@ -38,6 +38,7 @@ func (lm *RepoLinkInMemory) GetShortenLink(url string) (*Links, error) {
 	lm.mu.RLock()
 	for _, initialLink := range lm.links {
 		if initialLink.InitialURL == url {
+			lm.mu.RUnlock()
 			return initialLink, nil
 		}
 	}

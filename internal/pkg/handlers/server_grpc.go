@@ -55,7 +55,7 @@ func (c ConverterServer) Generation(_ context.Context, requestGeneration *Reques
 func StartConverterServer(linkRepo links.LinkRepo) {
 	lis, err := net.Listen("tcp", "localhost:9879")
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Printf("failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
 	RegisterConverterServiceServer(grpcServer, &ConverterServer{

@@ -3,14 +3,18 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/gorilla/mux"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
-	"net/http/httptest"
 	"test-task-ozon/internal/pkg/repository/links"
 	"test-task-ozon/internal/pkg/sendingjson"
 	"testing"
@@ -19,7 +23,6 @@ import (
 
 const (
 	POST = "POST"
-	GET  = "GET"
 )
 
 var (
@@ -27,11 +30,9 @@ var (
 )
 
 type SearchRequest struct {
-	//метод запроса
 	Method string
-	//тело запроса
-	Body []byte
-	ctx  context.Context
+	Body   []byte
+	ctx    context.Context
 }
 
 type CheckoutResultServer struct {
@@ -87,12 +88,16 @@ func (srv *SearchClient) CheckoutServer(request SearchRequest) (*CheckoutResultS
 	return result, nil
 }
 
-func TestGetLinkOK(t *testing.T) {
-	userHandler, err := CreateUser()
-	if err != nil {
-		log.Println(err)
-		return
-	}
+func TestConverterServerGetLink(t *testing.T) {
+	lis := bufconn.Listen(1024 * 1024)
+	t.Cleanup(func() {
+		lis.Close()
+	})
+
+	srv := grpc.NewServer()
+	t.Cleanup(func() {
+		srv.Stop()
+	})
 
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -100,41 +105,62 @@ func TestGetLinkOK(t *testing.T) {
 		return
 	}
 	defer db.Close()
-	ctx := context.Background()
+
 	repo, err := links.NewRepoLinkPostgres(db, ctx)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	userHandler.LinkRepo = repo
 	result := []string{"initial_url", "shorten_url"}
-	mock.ExpectQuery("SELECT initial_url,shorten_url FROM link WHERE shorten_url=$1 LIMIT 1;").WithArgs("localhost:8080/141O2_5zsO").WillReturnRows(sqlmock.NewRows(result).AddRow("https://chatbot.theb.ai/#/chat/168573123831355", "localhost:8080/141O2_5zsO"))
-	cases := []TestCase{
-		{
-			Response: CheckoutResultServer{
-				Status: http.StatusOK,
-			},
-		},
+	mock.ExpectQuery("SELECT initial_url,shorten_url FROM link WHERE shorten_url=").WillReturnRows(sqlmock.NewRows(result).AddRow(initialURL, "141O2_5zsO"))
+	mock.ExpectQuery("SELECT initial_url,shorten_url FROM link WHERE shorten_url=").WillReturnError(sql.ErrNoRows)
+	mock.ExpectQuery("SELECT initial_url,shorten_url FROM link WHERE shorten_url=").WillReturnError(errTest)
+	svc := ConverterServer{LinkRepo: repo}
+	RegisterConverterServiceServer(srv, &svc)
+
+	go func() {
+		if err := srv.Serve(lis); err != nil {
+			log.Fatalf("srv.Serve %v", err)
+		}
+	}()
+
+	dialer := func(context.Context, string) (net.Conn, error) {
+		return lis.Dial()
 	}
-	ts := httptest.NewServer(http.HandlerFunc(userHandler.GetLink))
-	for caseNum, item := range cases {
-		req, err := http.NewRequest(GET, ts.URL, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		req = mux.SetURLVars(req, map[string]string{
-			"URL": "localhost:8080/141O2_5zsO",
-		})
-		rr := httptest.NewRecorder()
-		userHandler.GetLink(rr, req)
-		if rr.Code != item.Response.Status {
-			t.Errorf("[%d] the status code %d  is different from the expected one %d", caseNum, rr.Code, item.Response.Status)
-		}
-		if string(rr.Body.Bytes()) != "https://chatbot.theb.ai/#/chat/168573123831355" {
-			t.Errorf("[%d] invalid body returned, expected - %s, we have - %s", caseNum, "https://chatbot.theb.ai/#/chat/168573123831355", string(rr.Body.Bytes()))
-		}
+
+	conn, err := grpc.Dial("", grpc.WithContextDialer(dialer), grpc.WithInsecure())
+	t.Cleanup(func() {
+		conn.Close()
+	})
+	if err != nil {
+		t.Fatalf("grpc.DialContext %v", err)
 	}
-	ts.Close()
+
+	client := NewConverterServiceClient(conn)
+
+	res, err := client.GetLink(context.Background(), &RequestGetLink{ShortenUrl: shortenURL})
+	if err != nil {
+		t.Errorf("client.GetLink %v", err)
+	}
+	if res.InitialUrl != initialURL {
+		t.Errorf("a different res was expected InitialUrl %v", res.InitialUrl)
+	}
+
+	res, err = client.GetLink(context.Background(), &RequestGetLink{ShortenUrl: shortenURL})
+	if status.Code(err) != codes.NotFound {
+		t.Errorf("another error code was expected - %v", codes.NotFound)
+	}
+	if res != nil {
+		t.Errorf("expected different result - nil")
+	}
+
+	res, err = client.GetLink(context.Background(), &RequestGetLink{ShortenUrl: shortenURL})
+	if err == nil {
+		t.Errorf("another error was expected - %v", errTest)
+	}
+	if res != nil {
+		t.Errorf("expected different result - nil")
+	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
