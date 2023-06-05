@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/DATA-DOG/go-sqlmock"
 	"log"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
 )
 
 type TestRepoLinkResponse struct {
