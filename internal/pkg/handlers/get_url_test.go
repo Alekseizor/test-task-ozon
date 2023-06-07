@@ -5,10 +5,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -25,6 +27,7 @@ import (
 
 const (
 	POST = "POST"
+	GET  = "GET"
 )
 
 var (
@@ -167,4 +170,69 @@ func TestConverterServerGetLink(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
+}
+
+func TestCreateGRPCClientConnection(t *testing.T) {
+	lis := bufconn.Listen(1024 * 1024)
+	t.Cleanup(func() {
+		lis.Close()
+	})
+
+	srv := grpc.NewServer()
+	t.Cleanup(func() {
+		srv.Stop()
+	})
+
+	svc := ConverterServer{}
+	RegisterConverterServiceServer(srv, &svc)
+
+	go func() {
+		if err := srv.Serve(lis); err != nil {
+			log.Fatalf("srv.Serve %v", err)
+		}
+	}()
+
+	_, err := CreateGRPCClientConnection("bufnet")
+	if err != nil {
+		t.Errorf("another error was expected - %v", "nil")
+	}
+	_, err = CreateGRPCClientConnection("")
+	if err == nil {
+		t.Errorf("an error was expected")
+	}
+}
+
+func TestGetLink(t *testing.T) {
+	userHandler, err := CreateUser()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	cases := []TestCase{
+		{
+			Response: CheckoutResultServer{
+				Status: http.StatusInternalServerError,
+				Data:   []byte("couldn't get the original link\n"),
+			},
+		},
+	}
+	ts := httptest.NewServer(http.HandlerFunc(userHandler.GetLink))
+	for caseNum, item := range cases {
+		req, err := http.NewRequest(GET, ts.URL, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req = mux.SetURLVars(req, map[string]string{
+			"URL": "localhost:8080/141O2_5zsO",
+		})
+		rr := httptest.NewRecorder()
+		userHandler.GetLink(rr, req)
+		if rr.Code != item.Response.Status {
+			t.Errorf("[%d] the status code %d  is different from the expected one %d", caseNum, rr.Code, item.Response.Status)
+		}
+		if rr.Body.String() != string(item.Response.Data) {
+			t.Errorf("[%d] invalid body returned, expected - %s, we have - %s", caseNum, string(item.Response.Data), rr.Body.String())
+		}
+	}
+	ts.Close()
 }

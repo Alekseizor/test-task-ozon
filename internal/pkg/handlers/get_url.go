@@ -23,10 +23,7 @@ type LinksHandler struct {
 
 func (h *LinksHandler) GetLink(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	}
-	conn, err := grpc.Dial("localhost:9879", opts...)
+	conn, err := CreateGRPCClientConnection("localhost:9879")
 	if err != nil {
 		h.Logger.Infof("url:%s method:%s error: failed to connect to localhost:9879 - %s", r.URL.Path, r.Method, err.Error())
 		http.Error(w, `generation failed`, http.StatusInternalServerError)
@@ -52,4 +49,15 @@ func (h *LinksHandler) GetLink(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+}
+
+func CreateGRPCClientConnection(address string) (*grpc.ClientConn, error) {
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+	conn, err := grpc.Dial(address, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
 }
